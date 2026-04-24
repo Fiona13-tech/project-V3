@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+       <link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body style="background-image: url('padpng.png'); background-repeat: no-repeat; background-position: center; background-size: cover; min-height: 100vh;">
+
+
+
+   <!-- FIX 1: One single container for the whole leaderboard (removed separate containers per player) -->
+<div class="container py-4" style="max-width: 900px;">
+
+        <h2 class="text-center mb-4 " style="color: #E1F5EE; font-size: 70px;">Leaderboard</h2>
+
+        <!-- FIX 2: Added d-flex flex-column gap-3 here to space players apart -->
+        <div class="d-flex flex-column gap-3">
+
+            <!-- Player 1 -->
+            <div class="list-group-item d-flex align-items-center bg-primary rounded p-4" style="font-size: 30px;">
+                <!-- Rank -->
+                <span class="badge bg-secondary me-3">
+                    <img src="padpng.png" width="30" height="30" alt="1st place">
+                </span>
+                <!-- Avatar -->
+                <img src="padpng.png" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;">
+                <!-- Name and Level in separate columns -->
+                <div class="flex-grow-1 row align-items-center">
+                    <div class="col-7">
+                        <p class="mb-0">Alex King</p>
+                    </div>
+                    <div class="col-5 text-center">
+                        <p class="mb-0" style="font-size: 14px;">Level 42</p>
+                    </div>
+                </div>
+                <!-- Score and Badge -->
+                <div class="d-flex flex-column align-items-end gap-1">
+                    <span class="badge" style="background: #EEEDFE; color: #3C3489;">Champion</span>
+                    <span>12,840 pts</span>
+                </div>
+            </div>
+
+            <!-- Player 2 -->
+            <div class="list-group-item d-flex align-items-center bg-success rounded p-4" style="font-size: 30px;">
+                <!-- Rank -->
+                <span class="badge bg-secondary me-3">
+                    <img src="padpng.png" width="30" height="30" alt="2nd place">
+                </span>
+                <!-- Avatar -->
+                <img src="padpng.png" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;">
+                <!-- Name and Level in separate columns -->
+                <div class="flex-grow-1 row align-items-center">
+                    <div class="col-7">
+                        <p class="mb-0">Sara Reeves</p>
+                    </div>
+                    <div class="col-5 text-center">
+                        <p class="mb-0" style="font-size: 14px;">Level 38</p>
+                    </div>
+                </div>
+                <!-- Score and Badge -->
+                <div class="d-flex flex-column align-items-end gap-1">
+                    <span class="badge" style="background: #E1F5EE; color: #085041;">Elite</span>
+                    <span>11,200 pts</span>
+                </div>
+            </div>
+
+            <!-- Player 3 -->
+            <!-- FIX 3: Rank was showing "3" as text but badge had no label — fixed to show rank number clearly -->
+            <div class="list-group-item d-flex align-items-center bg-info rounded p-4" style="font-size: 30px;">
+                <!-- Rank -->
+                <span class="badge bg-secondary me-3 fs-6">3</span>
+                <!-- Avatar -->
+                <img src="padpng.png" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;">
+                <!-- Name and Level in separate columns -->
+                <div class="flex-grow-1 row align-items-center">
+                    <div class="col-7">
+                        <p class="mb-0">Mike Tan</p>
+                    </div>
+                    <div class="col-5 text-center">
+                        <p class="mb-0" style="font-size: 14px;">Level 31</p>
+                    </div>
+                </div>
+                <!-- Score only (no badge for 3rd place and below) -->
+                <div class="d-flex flex-column align-items-end">
+                    <span>9,750 pts</span>
+                </div>
+            </div>
+
+            <!-- Player 4 -->
+            <div class="list-group-item d-flex align-items-center bg-warning rounded p-4" style="font-size: 30px;">
+                <!-- Rank -->
+                <span class="badge bg-secondary me-3 fs-6">4</span>
+                <!-- Avatar -->
+                <img src="padpng.png" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;">
+                <!-- Name and Level in separate columns -->
+                <div class="flex-grow-1 row align-items-center">
+                    <div class="col-7">
+                        <p class="mb-0">Jamie Lee</p>
+                    </div>
+                    <div class="col-5 text-center">
+                        <p class="mb-0" style="font-size: 14px;">Level 27</p>
+                    </div>
+                </div>
+                <!-- Score -->
+                <div class="d-flex flex-column align-items-end">
+                    <span>8,100 pts</span>
+                </div>
+            </div>
+
+            <!-- Player 5 -->
+            <!-- FIX 4: Removed extra stray </div> tags that were after bg-info, bg-warning, bg-danger blocks -->
+            <div class="list-group-item d-flex align-items-center bg-danger rounded p-4" style="font-size: 30px;    ">
+                <!-- Rank -->
+                <span class="badge bg-secondary me-3 fs-6">5</span>
+                <!-- Avatar -->
+                <img src="padpng.png" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;">
+                <!-- Name and Level in separate columns -->
+                <div class="flex-grow-1 row align-items-center">
+                    <div class="col-7">
+                        <p class="mb-0">Priya O.</p>
+                    </div>
+                    <div class="col-5 text-center">
+                        <p class="mb-0" style="font-size: 14px;">Level 22</p>
+                    </div>
+                </div>
+                <!-- Score -->
+                <div class="d-flex flex-column align-items-end">
+                    <span>6,430 pts</span>
+                </div>
+            </div>
+
+        </div><!-- end of d-flex flex-column gap-3 -->
+
+    </div><!-- end of container -->
+   <script src="js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
