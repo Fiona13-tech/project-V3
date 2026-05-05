@@ -5,13 +5,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Game Levels</title>
+  <title>Coin Chase - Welcome</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <style>
     body {
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
       color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-size: 18px;
+    }
+
+    .hero-wrapper {
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem 2rem;
+    }
+
+    .hero-card {
+      width: 100%;
+      max-width: 980px;
+      padding: 3rem;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 32px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
     }
 
     .card {
@@ -59,55 +81,230 @@
 
     h1 {
       font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .coin-image {
+      animation: bounce 2s infinite;
+      filter: drop-shadow(0 0 10px rgba(255,215,0,0.5));
+      max-width: 220px;
+    }
+
+    .welcome-content {
+      animation: fadeInUp 1.5s ease-out;
+    }
+
+    .welcome-content h1 {
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      margin-bottom: 1rem;
+    }
+
+    .welcome-content p.lead {
+      font-size: 1.4rem;
+      max-width: 720px;
+      margin: 0 auto 2rem;
+      line-height: 1.6;
+    }
+
+    .hero-buttons .btn {
+      min-width: 200px;
+      font-size: 1.05rem;
+      padding: 0.95rem 1.8rem;
+    }
+
+    .howto-card {
+      font-size: 1.15rem;
+      line-height: 1.7;
+    }
+
+    .howto-card h5 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .howto-card ul li {
+      margin-bottom: 0.9rem;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+      box-shadow: 0 0 15px rgba(0,123,255,0.5);
+      transform: scale(1.05);
+    }
+
+    .btn-success:hover {
+      background-color: #218838;
+      box-shadow: 0 0 15px rgba(40,167,69,0.5);
+      transform: scale(1.05);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+
+    .floating-particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      background: radial-gradient(circle, rgba(255,215,0,0.8) 0%, rgba(255,215,0,0) 70%);
+      border-radius: 50%;
+      animation: float 6s linear infinite;
+    }
+
+    .navbar-custom {
+      background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+      border-bottom: 2px solid #ffd700;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .navbar-custom .navbar-brand {
+      color: #ffd700;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .navbar-custom .navbar-nav .nav-link {
+      color: #ffffff;
+      transition: color 0.3s ease;
+    }
+
+    .navbar-custom .navbar-nav .nav-link:hover {
+      color: #ffd700;
+    }
+
+    .navbar-custom .navbar-toggler {
+      border-color: #ffd700;
+    }
+
+    .navbar-custom .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 215, 0, 0.5%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='m4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
     }
   </style>
 </head>
 
 <body>
+   <nav class="navbar navbar-dark navbar-expand-sm fixed-top navbar-custom">
+    <div class="container">
+        <a href="#"
+    class="navbar-brand h1">
+        <img src="Logo.jpg" width="30px" class="d-inline-block align-top rounded-circle" height="30px" alt="logo" >
+        Coin Chase
 
-<div class="container text-center mt-5">
-  <h1>🎮 Game Levels</h1>
-  <p class="text-light">Choose your difficulty</p>
+    </a>
 
-  <div class="row mt-4">
+    <button 
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#navbarNav"
+    class="navbar-toggler"
+    aria-controls="navbarNav"
+    aria-expanded="false"
+    aria-label="Toggle navigation"
+     >
+        <span class="navbar-toggler-icon"></span>
+    </button> 
 
-    <!-- Level 1 -->
-    <div class="col-md-4">
-      <div class="card easy shadow">
-        <img src="padpng.png" class="card-img-top">
-        <div class="card-body">
-          <h5>Level 1</h5>
-          <p>Easy Mode</p>
-           <h5>Easy mode</h5> <button class="btn btn-success" style="display: block; margin: 0 auto;"> <a href="Game 4/escape.html" class="text-white text-decoration-none">Play</a></button>
-        </div>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="index.html" class="nav-link active">🏠 Home</a>
+            </li>
+             <li class="nav-item">
+                <a href="Game 4/escape.html" class="nav-link ">🎮 Play</a>
+            </li>
+             <li class="nav-item">
+                <a href="leaderboard.html" class="nav-link ">🏆 Scoreboard</a>
+            </li>
+             <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle"
+                  id="navbarDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >ℹ️ About</a>
+                <ul class="dropdown-menu"
+                  aria-labelledby="navbarDropdown">
+                <li >
+                    <a href="#" class="dropdown-item">About Us</a>
+                </li>
+                <li >
+                    <a href="#" class="dropdown-item">How to Play</a>
+                </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+    </div>      
+   </nav> 
+   <!--end of navbar-->
+
+<div class="hero-wrapper">
+  <div class="hero-card text-center welcome-content">
+    <h1 class="display-4 text-light">Welcome to Coin Chase!</h1>
+    <img src="coin.png" alt="Coin" class="img-fluid mb-4 coin-image">
+    <p class="lead text-light">Get ready to collect coins and have fun!</p>
+    
+    <div class="d-flex flex-column flex-md-row justify-content-center gap-3 hero-buttons">
+      <button class="btn btn-primary btn-lg" type="button" data-bs-toggle="collapse" data-bs-target="#howToPlayCollapse" aria-expanded="false" aria-controls="howToPlayCollapse">How to Play</button>
+      <a href="Game 4/escape.html" class="btn btn-success btn-lg text-white text-decoration-none">Continue to the Game</a>
+    </div>
+    
+    <div class="collapse mt-4" id="howToPlayCollapse">
+      <div class="card card-body bg-dark border-light text-start text-white shadow-lg howto-card">
+        <h5>How to Play Coin Chase</h5>
+        <ul class="mb-0">
+          <li><strong>Objective:</strong> Collect all coins in the arena while avoiding the enemy.</li>
+          <li><strong>Movement:</strong> Use arrow keys or WASD to move.</li>
+          <li><strong>Escape Zone:</strong> The blue block slows the enemy and gives you a safe spot.</li>
+          <li><strong>Levels:</strong> Collect all coins to advance. Each level gets harder.</li>
+          <li><strong>Lives:</strong> You have 3 lives. The enemy costs one life when it catches you.</li>
+          <li><strong>Pause:</strong> Press P or Space to pause/resume during the game.</li>
+        </ul>
+        <p class="mb-0">Click the button again to hide these instructions.</p>
       </div>
     </div>
-
-    <!-- Level 2 -->
-    <div class="col-md-4">
-      <div class="card medium shadow">
-        <img src="padpng.png" class="card-img-top">
-        <div class="card-body">
-          <h5>Level 2</h5>
-          <p>Moderate Mode</p>
-          <button class="btn btn-custom">Play</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Level 3 -->
-    <div class="col-md-4">
-      <div class="card hard shadow">
-        <img src="padpng.png" class="card-img-top">
-        <div class="card-body">
-          <h5>Level 3</h5>
-          <p>Hard Mode</p>
-          <button class="btn btn-custom">Play</button>
-        </div>
-      </div>
-    </div>
-
   </div>
+</div>
+
+
+
+<div class="floating-particles">
+  <div class="particle" style="left: 10%; animation-delay: 0s; width: 10px; height: 10px;"></div>
+  <div class="particle" style="left: 20%; animation-delay: 1s; width: 8px; height: 8px;"></div>
+  <div class="particle" style="left: 30%; animation-delay: 2s; width: 12px; height: 12px;"></div>
+  <div class="particle" style="left: 40%; animation-delay: 3s; width: 6px; height: 6px;"></div>
+  <div class="particle" style="left: 50%; animation-delay: 4s; width: 10px; height: 10px;"></div>
+  <div class="particle" style="left: 60%; animation-delay: 5s; width: 8px; height: 8px;"></div>
+  <div class="particle" style="left: 70%; animation-delay: 6s; width: 12px; height: 12px;"></div>
+  <div class="particle" style="left: 80%; animation-delay: 7s; width: 6px; height: 6px;"></div>
+  <div class="particle" style="left: 90%; animation-delay: 8s; width: 10px; height: 10px;"></div>
 </div>
 
 </body>

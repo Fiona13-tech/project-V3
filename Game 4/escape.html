@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Coin Chase Game</title>
+  <link rel="stylesheet" href="../css/bootstrap.min.css">
   <style>
-    /* =============================================
-       PAGE STYLING
-       Sets the background colour and centres
-       everything on the page
-    ============================================= */
     * {
       margin: 0;
       padding: 0;
@@ -15,7 +13,7 @@
     }
 
     body {
-      background: #008080;        /* teal background */
+      background: #008080;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -24,7 +22,6 @@
       font-family: Arial, sans-serif;
     }
 
-    /* The title above the game */
     h1 {
       color: #FFD700;
       font-size: 26px;
@@ -32,23 +29,64 @@
       letter-spacing: 1px;
     }
 
-    /* The HUD bar that shows Score / Lives / Level */
     #hud {
       display: flex;
-      gap: 40px;
-      color: white;
+      gap: 24px;
+      color: #f7f7f7;
       font-size: 16px;
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      padding: 14px 22px;
+      background: rgba(0, 0, 0, 0.36);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 22px;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      align-items: center;
     }
 
-    /* The canvas is the game screen */
+    #hud span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    }
+
+    #hud span strong {
+      display: inline-block;
+      min-width: 40px;
+      text-align: right;
+      color: #fffb94;
+    }
+
+    #hud .hud-item {
+      padding: 8px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* =============================================
+       CANVAS — THIS IS THE ONLY CHANGE
+       We remove the fixed width/height/aspect-ratio
+       and just let it fill its container naturally.
+       The JavaScript below does the rest.
+    ============================================= */
+    #canvasWrapper {
+      width: 100%;
+      max-width: 1200px;
+    }
+
     canvas {
-      border: 3px solid #00ff00;
+      border: 3px solid #ffa600;
       display: block;
+      width: 100%;        /* fills the wrapper */
+      height: auto;
+      background-color: #b30909;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
 
-    /* Message shown when game starts / ends */
     #message {
       color: white;
       font-size: 20px;
@@ -58,7 +96,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Start / Restart button */
     #startBtn {
       margin-top: 10px;
       padding: 10px 30px;
@@ -75,7 +112,6 @@
       background: #008844;
     }
 
-    /* Controls hint at the bottom */
     #controls {
       color: rgba(255,255,255,0.65);
       font-size: 13px;
@@ -85,222 +121,225 @@
   </style>
 </head>
 <body>
+  <div class="container py-4">
+    <div class="text-center mb-4">
+      <h1 class="display-6 text-warning">Welcome — Your Brain Is Going To Be Blown</h1>
+    </div>
 
-  <h1>Welcome — Your Brain Is Going To Be Blown</h1>
+    <div id="hud" class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-2 mb-3">
+      <span class="hud-item">💎 Score: <strong id="scoreDisplay">0</strong></span>
+      <span class="hud-item">❤️ Lives: <strong id="livesDisplay">3</strong></span>
+      <span class="hud-item">⚡ Level: <strong id="levelDisplay">1</strong></span>
+      <span class="hud-item">✨ Boost: <strong id="rewardDisplay">0%</strong></span>
+    </div>
 
-  <!-- HUD: live score, lives and level display -->
-  <div id="hud">
-    <span>Score: <span id="scoreDisplay">0</span></span>
-    <span>Lives: <span id="livesDisplay">3</span></span>
-    <span>Level: <span id="levelDisplay">1</span></span>
-  </div>
+    <!-- Wrapper div controls the width; canvas fills it -->
+    <div class="row justify-content-center mb-3">
+      <div id="canvasWrapper" class="col-12 col-md-10 col-lg-8 mx-auto">
+        <canvas id="gameCanvas"></canvas>
+      </div>
+    </div>
 
-  <!-- The game screen (600 wide, 400 tall) -->
-  <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <div id="message" class="text-center text-white mb-3">Press Start to play!</div>
 
-  <!-- Message area for alerts like "Caught!" or "Game Over" -->
-  <div id="message">Press Start to play!</div>
+    <div class="d-grid gap-2 d-sm-flex justify-content-center flex-wrap mb-3">
+      <button id="startBtn" type="button" class="btn btn-success btn-lg px-4">Start Game</button>
+      <button id="pauseBtn" type="button" class="btn btn-warning btn-lg px-4 d-none">Pause</button>
+      <button id="exitBtn" type="button" class="btn btn-danger btn-lg px-4" onclick="window.location='../card.html'">Exit Game</button>
+    </div>
 
-  <!-- Button to start or restart -->
-  <button id="startBtn">Start Game</button>
- <!-- Button to exit -->
-  <button id="startBtn"><a href="../card.html" class="text-white text-decoration-none">Exit Game</a></button>
-
-  <div id="controls">
-    Arrow keys to move &nbsp;|&nbsp;
-    Blue block = Escape Zone (enemy slows down) &nbsp;|&nbsp;
-    Collect all coins to reach the next level
+    <div id="controls" class="text-center text-white-50 small">
+      Arrow keys to move &nbsp;|&nbsp;
+      Blue block = Escape Zone (enemy slows down) &nbsp;|&nbsp;
+      Collect coins to fill the boost meter and trigger a temporary power-up
+    </div>
   </div>
 
 
   <script>
     // =============================================
-    // STEP 1 — GET THE CANVAS AND DRAWING TOOL
-    // canvas  = the screen we draw on
-    // ctx     = the pen/brush we draw with
-    // W, H    = width and height of the canvas
-    // =============================================
-    const canvas = document.getElementById('gameCanvas');
-    const ctx    = canvas.getContext('2d');
-    const W      = canvas.width;   // 600
-    const H      = canvas.height;  // 400
-
-
-    // =============================================
-    // SOUND SYSTEM — WEB AUDIO API
+    // CANVAS SETUP — RESPONSIVE SIZE
     //
-    // The Web Audio API lets us CREATE sounds using
-    // maths — no sound files needed!
+    // Instead of hardcoding width/height on the
+    // <canvas> tag, we measure the wrapper div
+    // and set the canvas to match.
     //
-    // How it works:
-    //   AudioContext = the sound engine
-    //   OscillatorNode = generates a sound wave
-    //     (like a speaker vibrating at a frequency)
-    //   GainNode = controls the volume
-    //
-    // Every sound follows this pattern:
-    //   1. Create an oscillator (the tone generator)
-    //   2. Create a gain node (the volume knob)
-    //   3. Connect: oscillator → gain → speakers
-    //   4. Set the frequency (pitch) and wave type
-    //   5. Set gain (volume) — then ramp it to 0
-    //      so the sound fades out smoothly
-    //   6. Start and stop the oscillator
+    // We also listen for window resize so the
+    // canvas always fits the screen.
     // =============================================
+    const canvas  = document.getElementById('gameCanvas');
+    const ctx     = canvas.getContext('2d');
 
-    // AudioContext is the sound engine.
-    // We create it once and reuse it for all sounds.
-    // "window.AudioContext || window.webkitAudioContext"
-    // is a fallback for older browsers (Safari).
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = null;  // starts as null — created on first interaction
+    // This sets the canvas drawing resolution
+    // to match its actual size on screen.
+    function resizeCanvas() {
+      const wrapper = document.getElementById('canvasWrapper');
+      const w = wrapper.clientWidth;
+      // Keep a 4:3 ratio — change the 0.75 to get a different shape
+      // e.g. 0.5625 for 16:9 widescreen
+      const h = Math.round(w * 0.75);
+      canvas.width  = w;
+      canvas.height = h;
+    }
 
-    // Browsers block audio until the user interacts
-    // with the page (clicks something). This function
-    // creates the audio context safely on first use.
-    function getAudioCtx() {
-      if (!audioCtx) {
-        audioCtx = new AudioCtx();
+    resizeCanvas();  // run once on load
+
+    // Run again whenever the window is resized
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      // If the game is not running, just show a blue screen
+      if (!running) {
+        ctx.fillStyle = '#0000FF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
+    });
+
+    // W and H now come from the canvas itself
+    // They update automatically after resizeCanvas()
+    // IMPORTANT: always use canvas.width / canvas.height
+    // in your game logic — not W/H — if you want them
+    // to reflect the latest size after a resize.
+    let W = canvas.width;
+    let H = canvas.height;
+
+    // Keep W and H in sync after resize
+    window.addEventListener('resize', () => {
+      W = canvas.width;
+      H = canvas.height;
+    });
+
+    ctx.fillStyle = '#0000FF';
+    ctx.fillRect(0, 0, W, H);
+
+
+    // =============================================
+    // SOUND SYSTEM
+    // =============================================
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new AudioCtx();
       return audioCtx;
     }
 
-    // ---- SOUND: Coin collected ----
-    // A bright, cheerful two-tone "ding" sound.
-    // We play a high note then a slightly higher note
-    // to give it that classic coin pickup feel.
     function playCoinSound() {
       const ac = getAudioCtx();
-
-      // Play two quick tones back to back
-      [880, 1100].forEach((freq, i) => {
-        const osc  = ac.createOscillator();  // tone generator
-        const gain = ac.createGain();         // volume control
-
-        osc.connect(gain);           // oscillator → gain
-        gain.connect(ac.destination); // gain → speakers
-
-        osc.type      = 'sine';  // smooth, round sound (like a bell)
-        osc.frequency.value = freq; // pitch in Hz (880 = A5 note)
-
-        const startTime = ac.currentTime + i * 0.08; // stagger by 0.08s
-        gain.gain.setValueAtTime(0.4, startTime);           // start at volume 0.4
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15); // fade out
-
-        osc.start(startTime);
-        osc.stop(startTime + 0.15);  // stop after 0.15 seconds
+      const now = ac.currentTime;
+      const chord = [880, 1047, 1318];
+      chord.forEach((freq, index) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        osc.type = index === 2 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        const delay = index * 0.03;
+        const start = now + delay;
+        gain.gain.setValueAtTime(0.0, start);
+        gain.gain.linearRampToValueAtTime(0.35 - index * 0.08, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+        osc.start(start);
+        osc.stop(start + 0.35);
       });
+      const click = ac.createOscillator();
+      const clickGain = ac.createGain();
+      click.type = 'square';
+      click.frequency.setValueAtTime(1800, now + 0.08);
+      click.connect(clickGain);
+      clickGain.connect(ac.destination);
+      clickGain.gain.setValueAtTime(0.2, now + 0.08);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      click.start(now + 0.08);
+      click.stop(now + 0.15);
     }
 
-    // ---- SOUND: Player caught by enemy ----
-    // A low, descending "wah-wah" sound — like
-    // a failure buzzer going down in pitch.
     function playCaughtSound() {
-      const ac   = getAudioCtx();
-      const osc  = ac.createOscillator();
-      const gain = ac.createGain();
-
-      osc.connect(gain);
-      gain.connect(ac.destination);
-
-      osc.type = 'sawtooth'; // harsh, buzzy wave — feels like a hit
-
-      // Start at a high frequency and sweep down fast
-      // This creates the falling "bwaaah" effect
-      osc.frequency.setValueAtTime(400, ac.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(80, ac.currentTime + 0.4);
-
-      gain.gain.setValueAtTime(0.5, ac.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.4);
-
-      osc.start(ac.currentTime);
-      osc.stop(ac.currentTime + 0.4);
+      const ac = getAudioCtx();
+      const now = ac.currentTime;
+      const bass = ac.createOscillator();
+      const bassGain = ac.createGain();
+      bass.type = 'triangle';
+      bass.frequency.setValueAtTime(180, now);
+      bass.frequency.exponentialRampToValueAtTime(90, now + 0.35);
+      bass.connect(bassGain);
+      bassGain.connect(ac.destination);
+      bassGain.gain.setValueAtTime(0.45, now);
+      bassGain.gain.exponentialRampToValueAtTime(0.002, now + 0.35);
+      bass.start(now);
+      bass.stop(now + 0.35);
+      const hit = ac.createOscillator();
+      const hitGain = ac.createGain();
+      hit.type = 'sawtooth';
+      hit.frequency.setValueAtTime(700, now);
+      hit.frequency.exponentialRampToValueAtTime(220, now + 0.22);
+      hit.connect(hitGain);
+      hitGain.connect(ac.destination);
+      hitGain.gain.setValueAtTime(0.26, now);
+      hitGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      hit.start(now);
+      hit.stop(now + 0.28);
     }
 
-    // ---- SOUND: Level up ----
-    // A happy rising fanfare — four ascending notes
-    // played quickly one after another.
     function playLevelUpSound() {
       const ac = getAudioCtx();
-
-      // Four notes going upward (C5, E5, G5, C6)
       const notes = [523, 659, 784, 1047];
-
       notes.forEach((freq, i) => {
         const osc  = ac.createOscillator();
         const gain = ac.createGain();
-
         osc.connect(gain);
         gain.connect(ac.destination);
-
-        osc.type = 'triangle'; // softer than sawtooth, warmer than sine
-
-        const t = ac.currentTime + i * 0.1; // each note 0.1s apart
+        osc.type = 'triangle';
+        const t = ac.currentTime + i * 0.1;
         osc.frequency.value = freq;
-
         gain.gain.setValueAtTime(0.35, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-
         osc.start(t);
         osc.stop(t + 0.2);
       });
     }
 
-    // ---- SOUND: Game over ----
-    // A slow, sad descending melody — four notes
-    // going downward like a funeral march.
     function playGameOverSound() {
       const ac = getAudioCtx();
-
-      // Four notes going downward (G4, E4, C4, G3)
+      const now = ac.currentTime;
       const notes = [392, 330, 261, 196];
-
       notes.forEach((freq, i) => {
-        const osc  = ac.createOscillator();
+        const osc1 = ac.createOscillator();
+        const osc2 = ac.createOscillator();
         const gain = ac.createGain();
-
-        osc.connect(gain);
+        osc1.type = 'sine';
+        osc2.type = 'triangle';
+        osc1.frequency.setValueAtTime(freq, now);
+        osc2.frequency.setValueAtTime(freq * 1.005, now);
+        osc1.connect(gain);
+        osc2.connect(gain);
         gain.connect(ac.destination);
-
-        osc.type = 'sine';
-
-        const t = ac.currentTime + i * 0.22; // slower gap = sadder feel
-        osc.frequency.value = freq;
-
-        gain.gain.setValueAtTime(0.4, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-
-        osc.start(t);
-        osc.stop(t + 0.35);
+        const t = now + i * 0.28;
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.linearRampToValueAtTime(0.05, t + 0.2);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+        osc1.start(t);
+        osc2.start(t);
+        osc1.stop(t + 0.8);
+        osc2.stop(t + 0.8);
       });
     }
 
-    // ---- SOUND: Enter escape zone ----
-    // A soft, airy "whoosh" sweep upward —
-    // tells the player they are now safe.
     function playEscapeSound() {
       const ac   = getAudioCtx();
       const osc  = ac.createOscillator();
       const gain = ac.createGain();
-
       osc.connect(gain);
       gain.connect(ac.destination);
-
       osc.type = 'sine';
-
-      // Sweep frequency upward — feels like ducking into safety
       osc.frequency.setValueAtTime(200, ac.currentTime);
       osc.frequency.exponentialRampToValueAtTime(600, ac.currentTime + 0.2);
-
       gain.gain.setValueAtTime(0.2, ac.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
-
       osc.start(ac.currentTime);
       osc.stop(ac.currentTime + 0.25);
     }
 
-    // ---- SOUND: Game start ----
-    // A short upbeat two-note "ready!" jingle.
     function playStartSound() {
       const ac = getAudioCtx();
       [440, 660].forEach((freq, i) => {
@@ -318,101 +357,105 @@
       });
     }
 
-    // We track whether the player was hiding last frame
-    // so we only play the escape sound ONCE when they enter,
-    // not every single frame while they stay inside.
+    let bgMusicOsc1, bgMusicOsc2, bgMusicGain;
+    function playBackgroundMusic() {
+      const ac = getAudioCtx();
+      if (bgMusicOsc1) return;
+      bgMusicOsc1 = ac.createOscillator();
+      bgMusicOsc2 = ac.createOscillator();
+      bgMusicGain = ac.createGain();
+      bgMusicOsc1.connect(bgMusicGain);
+      bgMusicOsc2.connect(bgMusicGain);
+      bgMusicGain.connect(ac.destination);
+      bgMusicOsc1.type = 'sine';
+      bgMusicOsc2.type = 'triangle';
+      const notes = [261.63, 392.00];
+      let noteIndex = 0;
+      bgMusicOsc1.frequency.setValueAtTime(notes[noteIndex], ac.currentTime);
+      bgMusicOsc2.frequency.setValueAtTime(notes[(noteIndex + 1) % 2], ac.currentTime);
+      bgMusicGain.gain.setValueAtTime(0.1, ac.currentTime);
+      bgMusicOsc1.start(ac.currentTime);
+      bgMusicOsc2.start(ac.currentTime);
+      setInterval(() => {
+        noteIndex = (noteIndex + 1) % 2;
+        bgMusicOsc1.frequency.setValueAtTime(notes[noteIndex], ac.currentTime);
+        bgMusicOsc2.frequency.setValueAtTime(notes[(noteIndex + 1) % 2], ac.currentTime);
+      }, 2000);
+    }
+
+    function stopBackgroundMusic() {
+      if (bgMusicOsc1) {
+        bgMusicOsc1.stop();
+        bgMusicOsc2.stop();
+        bgMusicOsc1 = null;
+        bgMusicOsc2 = null;
+      }
+    }
+
     let wasHidingLastFrame = false;
 
 
     // =============================================
-    // STEP 2 — DEFINE THE SHAPES IN THE ARENA
-    // Each shape is an object with x, y, w (width)
-    // and h (height).
-    // x = distance from left edge
-    // y = distance from top edge
+    // SHAPES — all use canvas.width / canvas.height
+    // so they scale with the canvas automatically
     // =============================================
+    const DIVIDER = { get x() { return canvas.width/2 + 15 }, get y() { return canvas.height/2 - 120 }, w: 10, h: 240 };
 
-    // The blue block — player hides here to confuse enemy
-    const ESCAPE_BLOCK = { x: 60,  y: 100, w: 160, h: 160 };
+    let ESCAPE_BLOCK;
+    let WALL_BLOCK;
 
-    // The black wall block — blocks movement
-    const WALL_BLOCK   = { x: 320, y: 130, w: 140, h: 130 };
-
-    // The thin vertical divider — forces enemy to go around
-    const DIVIDER      = { x: 262, y: 80,  w: 10,  h: 240 };
-
-    // Four corner squares (decorative + act as extra walls)
     const CORNERS = [
-      { x: 0,   y: 0,   w: 40, h: 40 },   // top-left
-      { x: 560, y: 0,   w: 40, h: 40 },   // top-right
-      { x: 0,   y: 360, w: 40, h: 40 },   // bottom-left
-      { x: 560, y: 360, w: 40, h: 40 },   // bottom-right
+      { get x() { return 0 },                    get y() { return 0 },                    w: 40, h: 40 },
+      { get x() { return canvas.width - 40 },    get y() { return 0 },                    w: 40, h: 40 },
+      { get x() { return 0 },                    get y() { return canvas.height - 40 },   w: 40, h: 40 },
+      { get x() { return canvas.width - 40 },    get y() { return canvas.height - 40 },   w: 40, h: 40 },
     ];
 
-    // All solid obstacles the player and enemy cannot pass through
-    // We combine them into one array for easy collision checking
     function getAllObstacles() {
       return [...CORNERS, WALL_BLOCK, DIVIDER];
     }
 
 
     // =============================================
-    // STEP 3 — GAME STATE VARIABLES
-    // These track the current score, lives, level
-    // and whether the game is running
+    // GAME STATE
     // =============================================
     let score  = 0;
     let lives  = 3;
     let level  = 1;
     let running = false;
-
-    // invincibleFrames counts down after being caught
-    // while > 0 the player cannot be caught again
+    let paused = false;
+    let bgColor = '#008080';
     let invincibleFrames = 0;
+    let rewardPoints = 0;
+    let rewardActive = false;
+    let rewardTimer = 0;
+    let rewardPower = 1;
+    let streak = 0;
+    const REWARD_THRESHOLD = 100;
+    const REWARD_DURATION = 5000;
 
-
-    // =============================================
-    // STEP 4 — PLAYER AND ENEMY OBJECTS
-    // x, y   = current position
-    // w, h   = size
-    // speed  = how many pixels they move per frame
-    // =============================================
     let player = {};
     let enemy  = {};
     let coins  = [];
+    let coinParticles = [];
+    let escapePulse = 0;
+    let bgStars = [];
+    let bgOffset = 0;
+    let movingObstacles = [];
+    let endlessMode = false;
+    let endlessCoinsSpawnTime = 0;
 
 
     // =============================================
-    // HELPER — RECTANGLE COLLISION CHECK
-    // Returns true if rectangle A overlaps any
-    // rectangle in the given list.
-    //
-    // Two rectangles overlap when:
-    //   A's left < B's right   AND
-    //   A's right > B's left   AND
-    //   A's top < B's bottom   AND
-    //   A's bottom > B's top
+    // HELPERS
     // =============================================
     function overlapsAny(ax, ay, aw, ah, rectList) {
       for (const r of rectList) {
-        if (
-          ax        < r.x + r.w &&
-          ax + aw   > r.x       &&
-          ay        < r.y + r.h &&
-          ay + ah   > r.y
-        ) {
-          return true;  // found an overlap, stop checking
-        }
+        if (ax < r.x + r.w && ax + aw > r.x && ay < r.y + r.h && ay + ah > r.y) return true;
       }
-      return false;  // no overlaps found
+      return false;
     }
 
-
-    // =============================================
-    // HELPER — CHECK IF PLAYER IS IN ESCAPE BLOCK
-    // Returns true only when the player is fully
-    // inside the blue escape zone
-    // =============================================
     function playerIsHiding() {
       return (
         player.x > ESCAPE_BLOCK.x &&
@@ -424,283 +467,445 @@
 
 
     // =============================================
-    // STEP 5 — SPAWN COINS AT RANDOM POSITIONS
-    // We pick random spots but skip any spot that
-    // overlaps a wall or is too close to the player
+    // COINS & PARTICLES
     // =============================================
     function spawnCoins(howMany) {
       const result = [];
       let attempts = 0;
-
       while (result.length < howMany && attempts < 1000) {
         attempts++;
-
-        // Pick a random position inside the arena
-        const cx = 50 + Math.random() * 500;
-        const cy = 50 + Math.random() * 300;
-        const r  = 9;  // coin radius
-
-        // Skip if this spot is inside a wall
+        const cx = 100 + Math.random() * (canvas.width - 200);
+        const cy = 100 + Math.random() * (canvas.height - 200);
+        const r  = 9;
         const obstacles = [...getAllObstacles(), ESCAPE_BLOCK];
         if (overlapsAny(cx - r, cy - r, r * 2, r * 2, obstacles)) continue;
-
-        // Skip if too close to where the player starts
-        const pdx = cx - (W / 2);
-        const pdy = cy - (H / 2);
-        if (Math.sqrt(pdx * pdx + pdy * pdy) < 60) continue;
-
+        const pdx = cx - (canvas.width / 2);
+        const pdy = cy - (canvas.height / 2);
+        if (Math.sqrt(pdx * pdx + pdy * pdy) < 100) continue;
         result.push({ x: cx, y: cy, r: r, collected: false });
       }
-
       return result;
+    }
+
+    function spawnCoinParticles(coin) {
+      for (let i = 0; i < 14; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 40 + Math.random() * 120;
+        coinParticles.push({
+          x: coin.x, y: coin.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: 1 + Math.random() * 2,
+          life: 0,
+          maxLife: 400 + Math.random() * 200,
+          alpha: 1,
+          color: i % 2 === 0 ? '#fff79a' : '#ffd700'
+        });
+      }
+    }
+
+    function updateParticles(deltaTime) {
+      const dt = deltaTime / 1000;
+      escapePulse += deltaTime / 500;
+      for (let i = coinParticles.length - 1; i >= 0; i--) {
+        const p = coinParticles[i];
+        p.life += deltaTime;
+        if (p.life >= p.maxLife) { coinParticles.splice(i, 1); continue; }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.alpha = 1 - p.life / p.maxLife;
+      }
+    }
+
+    function activateReward(powerLevel) {
+      rewardActive = true;
+      rewardTimer = REWARD_DURATION + (powerLevel - 1) * 700;
+      rewardPower = 1 + Math.min(0.6, powerLevel * 0.1);
+      showMessage(`Reward x${powerLevel} active! Fast boost unlocked.`);
+      document.getElementById('rewardDisplay').textContent = `ACTIVE x${powerLevel}`;
+      playLevelUpSound();
+    }
+
+    function updateReward(deltaTime) {
+      if (!rewardActive) return;
+      rewardTimer -= deltaTime;
+      if (rewardTimer <= 0) {
+        rewardActive = false;
+        rewardPower = 1;
+        showMessage('Boost ended. Keep collecting!');
+        document.getElementById('rewardDisplay').textContent = `${rewardPoints}%`;
+      }
+    }
+
+    function drawParticles() {
+      for (const p of coinParticles) {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${parseInt(p.color.slice(1,3),16)}, ${parseInt(p.color.slice(3,5),16)}, ${parseInt(p.color.slice(5,7),16)}, ${p.alpha})`;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function spawnMovingObstacles(count) {
+      movingObstacles = [];
+      for (let i = 0; i < count; i++) {
+        const x = 150 + Math.random() * (canvas.width - 300);
+        const y = 150 + Math.random() * (canvas.height - 300);
+        const dirX = Math.random() > 0.5 ? 1 : -1;
+        const dirY = Math.random() > 0.5 ? 1 : -1;
+        movingObstacles.push({
+          x, y, w: 40, h: 40,
+          vx: dirX * (40 + Math.random() * 50),
+          vy: dirY * (25 + Math.random() * 35),
+          color: '#ff8c00'
+        });
+      }
+    }
+
+    function moveObstacles(deltaTime) {
+      const dt = deltaTime / 1000;
+      for (const obs of movingObstacles) {
+        obs.x += obs.vx * dt;
+        obs.y += obs.vy * dt;
+        if (obs.x <= 0 || obs.x + obs.w >= canvas.width)  obs.vx *= -1;
+        if (obs.y <= 0 || obs.y + obs.h >= canvas.height) obs.vy *= -1;
+        obs.x = Math.max(0, Math.min(canvas.width  - obs.w, obs.x));
+        obs.y = Math.max(0, Math.min(canvas.height - obs.h, obs.y));
+      }
+    }
+
+    function createBackgroundStars(count = 100) {
+      bgStars = [];
+      for (let i = 0; i < count; i++) {
+        bgStars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: 1 + Math.random() * 2,
+          alpha: 0.15 + Math.random() * 0.25,
+          speed: 10 + Math.random() * 30,
+        });
+      }
+    }
+
+    function updateBackground(deltaTime) {
+      const dt = deltaTime / 1000;
+      bgOffset += dt * 30;
+      for (const star of bgStars) {
+        star.y += star.speed * dt;
+        if (star.y > canvas.height) star.y = 0;
+      }
+    }
+
+    function drawBackground() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#111111');
+      gradient.addColorStop(0.35, bgColor);
+      gradient.addColorStop(1, '#04070f');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.globalAlpha = 0.08;
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 1;
+      const gap = 140;
+      const offset = bgOffset % gap;
+      for (let x = -gap; x < canvas.width + gap; x += gap) {
+        ctx.beginPath();
+        ctx.moveTo(x + offset, 0);
+        ctx.lineTo(x - offset, canvas.height);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      for (const star of bgStars) {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
 
     // =============================================
-    // STEP 6 — INITIALISE (RESET) THE LEVEL
-    // Called at the start and when the player
-    // reaches the next level
+    // INIT LEVEL
     // =============================================
     function initLevel() {
-      // Place player in the middle of the arena
-      player = { x: 290, y: 190, w: 20, h: 20, speed: 3 };
+      // Update W and H in case canvas was resized
+      W = canvas.width;
+      H = canvas.height;
 
-      // Place enemy at a random edge, away from player
+      const colors = ['#008080', '#800080', '#808000', '#008000', '#800000', '#000080'];
+      bgColor = colors[(level - 1) % colors.length];
+
+      if (level >= 10 && !endlessMode) {
+        endlessMode = true;
+        showMessage('ENDLESS MODE ACTIVATED!');
+        setTimeout(() => { if (running) showMessage(''); }, 1500);
+      }
+
+      player = { x: W/2 - 10, y: H/2 - 10, w: 20, h: 20, speed: 200 };
+
+      let placed = false;
+      let attempts = 0;
+      while (!placed && attempts < 100) {
+        attempts++;
+        const ex = 100 + Math.random() * (W - 260);
+        const ey = 100 + Math.random() * (H - 260);
+        const tempBlock = { x: ex, y: ey, w: 160, h: 160 };
+        const centerArea = { x: W/2 - 50, y: H/2 - 50, w: 100, h: 100 };
+        if (!overlapsAny(tempBlock.x, tempBlock.y, tempBlock.w, tempBlock.h, [DIVIDER, ...CORNERS, centerArea])) {
+          ESCAPE_BLOCK = tempBlock;
+          placed = true;
+        }
+      }
+
+      placed = false;
+      attempts = 0;
+      while (!placed && attempts < 100) {
+        attempts++;
+        const wx = 100 + Math.random() * (W - 240);
+        const wy = 100 + Math.random() * (H - 230);
+        const tempBlock = { x: wx, y: wy, w: 140, h: 130 };
+        const centerArea = { x: W/2 - 50, y: H/2 - 50, w: 100, h: 100 };
+        if (!overlapsAny(tempBlock.x, tempBlock.y, tempBlock.w, tempBlock.h, [DIVIDER, ESCAPE_BLOCK, ...CORNERS, centerArea])) {
+          WALL_BLOCK = tempBlock;
+          placed = true;
+        }
+      }
+
       const side = Math.floor(Math.random() * 4);
-      if (side === 0) enemy = { x: 50,      y: 50      };   // top-left area
-      if (side === 1) enemy = { x: W - 70,  y: 50      };   // top-right area
-      if (side === 2) enemy = { x: 50,      y: H - 70  };   // bottom-left area
-      if (side === 3) enemy = { x: W - 70,  y: H - 70  };   // bottom-right area
+      const edges = [
+        { x: 100,     y: 100     },
+        { x: W - 100, y: 100     },
+        { x: 100,     y: H - 100 },
+        { x: W - 100, y: H - 100 },
+      ];
+      enemy = { x: edges[side].x, y: edges[side].y, w: 20, h: 20, speed: 120 + (level * 20) };
 
-      // Enemy size and speed (gets faster each level)
-      enemy.w     = 20;
-      enemy.h     = 20;
-      enemy.speed = 1.2 + (level * 0.2);
-
-      // Spawn more coins each level
+      if (!bgStars.length) createBackgroundStars(120);
       coins = spawnCoins(4 + level * 2);
-
+      spawnMovingObstacles(4);
+      endlessCoinsSpawnTime = 0;
       invincibleFrames = 0;
     }
 
 
     // =============================================
-    // STEP 7 — KEYBOARD INPUT
-    // keys{} tracks which keys are currently held
-    // keydown  = mark key as pressed (true)
-    // keyup    = mark key as released (false)
+    // KEYBOARD INPUT
     // =============================================
     const keys = {};
-
     document.addEventListener('keydown', (e) => {
       keys[e.key] = true;
-      // Prevent the arrow keys from scrolling the page
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
-        e.preventDefault();
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+      if (e.key === 'p' || e.key === ' ') {
+        if (running) document.getElementById('pauseBtn').click();
       }
     });
-
-    document.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
+    document.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
 
     // =============================================
-    // STEP 8 — MOVE THE PLAYER
-    // Check each arrow key and shift the player
-    // in that direction IF the new spot has no wall
+    // MOVE PLAYER
     // =============================================
-    function movePlayer() {
+    function movePlayer(deltaTime) {
       let dx = 0;
       let dy = 0;
-
-      if (keys['ArrowLeft']  || keys['a']) dx -= player.speed;
-      if (keys['ArrowRight'] || keys['d']) dx += player.speed;
-      if (keys['ArrowUp']    || keys['w']) dy -= player.speed;
-      if (keys['ArrowDown']  || keys['s']) dy += player.speed;
+      const playerSpeed = player.speed * rewardPower;
+      if (keys['ArrowLeft']  || keys['a']) dx -= playerSpeed * (deltaTime / 1000);
+      if (keys['ArrowRight'] || keys['d']) dx += playerSpeed * (deltaTime / 1000);
+      if (keys['ArrowUp']    || keys['w']) dy -= playerSpeed * (deltaTime / 1000);
+      if (keys['ArrowDown']  || keys['s']) dy += playerSpeed * (deltaTime / 1000);
 
       const obstacles = getAllObstacles();
-
-      // Try to move horizontally
       const newX = player.x + dx;
-      if (
-        newX >= 0 &&
-        newX + player.w <= W &&
-        !overlapsAny(newX, player.y, player.w, player.h, obstacles)
-      ) {
+      if (newX >= 0 && newX + player.w <= canvas.width && !overlapsAny(newX, player.y, player.w, player.h, obstacles)) {
         player.x = newX;
       }
-
-      // Try to move vertically
       const newY = player.y + dy;
-      if (
-        newY >= 0 &&
-        newY + player.h <= H &&
-        !overlapsAny(player.x, newY, player.w, player.h, obstacles)
-      ) {
+      if (newY >= 0 && newY + player.h <= canvas.height && !overlapsAny(player.x, newY, player.w, player.h, obstacles)) {
         player.y = newY;
       }
     }
 
 
     // =============================================
-    // STEP 9 — MOVE THE ENEMY
-    // The enemy always moves toward the player.
-    // If the player is hiding, the enemy slows
-    // right down and cannot enter the escape block.
-    //
-    // Direction math:
-    //   dx, dy   = difference in position
-    //   dist     = straight-line distance (Pythagoras)
-    //   dx/dist  = a value between -1 and 1 giving direction
-    //   * speed  = how far to actually move
+    // MOVE ENEMY
     // =============================================
-    function moveEnemy() {
+    function moveEnemy(deltaTime) {
+      moveObstacles(deltaTime);
       const hiding = playerIsHiding();
-
-      // Slow the enemy when player is hiding
-      const currentSpeed = hiding ? 0.4 : enemy.speed;
-
-      // Find direction toward the player
+      const currentSpeed = hiding ? 40 : enemy.speed * (rewardActive ? 0.7 : 1);
       const dx   = player.x - enemy.x;
       const dy   = player.y - enemy.y;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;  // avoid dividing by zero
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const stepX = (dx / dist) * currentSpeed * (deltaTime / 1000);
+      const stepY = (dy / dist) * currentSpeed * (deltaTime / 1000);
 
-      const stepX = (dx / dist) * currentSpeed;
-      const stepY = (dy / dist) * currentSpeed;
-
-      // Try to move horizontally — cannot enter escape block
       const newEX = enemy.x + stepX;
-      if (
-        newEX >= 0 &&
-        newEX + enemy.w <= W &&
-        !overlapsAny(newEX, enemy.y, enemy.w, enemy.h, getAllObstacles()) &&
-        !overlapsAny(newEX, enemy.y, enemy.w, enemy.h, [ESCAPE_BLOCK])
-      ) {
+      if (newEX >= 0 && newEX + enemy.w <= canvas.width &&
+          !overlapsAny(newEX, enemy.y, enemy.w, enemy.h, getAllObstacles()) &&
+          !overlapsAny(newEX, enemy.y, enemy.w, enemy.h, [ESCAPE_BLOCK])) {
         enemy.x = newEX;
       }
-
-      // Try to move vertically
       const newEY = enemy.y + stepY;
-      if (
-        newEY >= 0 &&
-        newEY + enemy.h <= H &&
-        !overlapsAny(enemy.x, newEY, enemy.w, enemy.h, getAllObstacles()) &&
-        !overlapsAny(enemy.x, newEY, enemy.w, enemy.h, [ESCAPE_BLOCK])
-      ) {
+      if (newEY >= 0 && newEY + enemy.h <= canvas.height &&
+          !overlapsAny(enemy.x, newEY, enemy.w, enemy.h, getAllObstacles()) &&
+          !overlapsAny(enemy.x, newEY, enemy.w, enemy.h, [ESCAPE_BLOCK])) {
         enemy.y = newEY;
       }
     }
 
 
     // =============================================
-    // STEP 10 — CHECK COLLISIONS
-    // A) Player touches a coin  → collect it
-    // B) Enemy touches player   → lose a life
-    // C) All coins collected    → next level!
+    // CHECK COLLISIONS
     // =============================================
     function checkCollisions() {
-
-      // A) Coin collection
       for (const coin of coins) {
         if (coin.collected) continue;
-
         const dx   = (player.x + player.w / 2) - coin.x;
         const dy   = (player.y + player.h / 2) - coin.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-
         if (dist < coin.r + 12) {
           coin.collected = true;
-          score += 10 * level;          // more points on higher levels
+          streak = Math.min(6, streak + 1);
+          const comboBonus = streak * 5;
+          const rewardGain = 10 + comboBonus;
+          score += 10 * level + comboBonus;
+          rewardPoints = Math.min(REWARD_THRESHOLD, rewardPoints + rewardGain);
+          if (!rewardActive) {
+            document.getElementById('rewardDisplay').textContent = `${rewardPoints}%`;
+          }
+          if (rewardPoints >= REWARD_THRESHOLD && !rewardActive) {
+            rewardPoints -= REWARD_THRESHOLD;
+            activateReward(streak);
+          }
           document.getElementById('scoreDisplay').textContent = score;
-          playCoinSound();              // ding! coin collected
+          showMessage(`Combo x${streak}! +${rewardGain} reward`);
+          playCoinSound();
+          spawnCoinParticles(coin);
+          if (endlessMode) { const newCoins = spawnCoins(1); coins.push(...newCoins); }
         }
       }
 
-      // B) Enemy catches player (skip if invincible)
+      for (const obs of movingObstacles) {
+        if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
+            player.y < obs.y + obs.h && player.y + player.h > obs.y) {
+          if (invincibleFrames <= 0) {
+            lives--;
+            streak = 0;
+            document.getElementById('livesDisplay').textContent = lives;
+            invincibleFrames = 100;
+            playCaughtSound();
+            if (lives <= 0) { endGame(); return; }
+            player.x = canvas.width/2 - 10;
+            player.y = canvas.height/2 - 10;
+            showMessage('Combo broken! Hit obstacle!');
+            setTimeout(() => { if (running) showMessage(''); }, 1000);
+          }
+        }
+      }
+
       if (invincibleFrames <= 0) {
         const dx   = (player.x + player.w / 2) - (enemy.x + enemy.w / 2);
         const dy   = (player.y + player.h / 2) - (enemy.y + enemy.h / 2);
         const dist = Math.sqrt(dx * dx + dy * dy);
-
         if (dist < 22) {
           lives--;
+          streak = 0;
           document.getElementById('livesDisplay').textContent = lives;
-          invincibleFrames = 100;  // 100 frames of safety after being caught
-
-          if (lives <= 0) {
-            endGame();
-            return;
-          }
-
-          // Respawn player in the centre
-          player.x = 290;
-          player.y = 190;
-          showMessage('Caught! Get back up!');
+          invincibleFrames = 100;
+          playCaughtSound();
+          if (lives <= 0) { endGame(); return; }
+          player.x = canvas.width/2 - 10;
+          player.y = canvas.height/2 - 10;
+          showMessage('Combo broken! Caught!');
           setTimeout(() => { if (running) showMessage(''); }, 1200);
         }
       } else {
-        invincibleFrames--;  // count down invincibility
+        invincibleFrames--;
       }
 
-      // C) All coins collected → next level
-      if (coins.every(c => c.collected)) {
+      if (!endlessMode && coins.every(c => c.collected)) {
         level++;
         document.getElementById('levelDisplay').textContent = level;
+        playLevelUpSound();
         showMessage('Level ' + level + '!  Enemy is faster!');
         setTimeout(() => { if (running) showMessage(''); }, 1400);
         initLevel();
+      }
+
+      if (endlessMode) {
+        endlessCoinsSpawnTime += 1;
+        const difficultyMultiplier = 1 + (score / 5000);
+        if (endlessCoinsSpawnTime > 300 / difficultyMultiplier) {
+          endlessCoinsSpawnTime = 0;
+          if (coins.filter(c => !c.collected).length < 3 + Math.floor(score / 2000)) {
+            coins.push(...spawnCoins(1));
+          }
+          if (score > 0 && score % 1000 === 0) enemy.speed *= 1.05;
+        }
       }
     }
 
 
     // =============================================
-    // STEP 11 — DRAW EVERYTHING
-    // This function redraws the whole canvas every
-    // single frame. Order matters — things drawn
-    // later appear on top of things drawn earlier.
+    // DRAW
     // =============================================
     function draw() {
-      // --- Background ---
-      ctx.fillStyle = '#008080';
-      ctx.fillRect(0, 0, W, H);
+      drawBackground();
 
-      // --- Escape block (blue — glows when player is inside) ---
       const hiding = playerIsHiding();
+      const pulse = 1 + Math.sin(escapePulse) * 0.08;
+      const blockW = ESCAPE_BLOCK.w * pulse;
+      const blockH = ESCAPE_BLOCK.h * pulse;
+      const blockX = ESCAPE_BLOCK.x - (blockW - ESCAPE_BLOCK.w) / 2;
+      const blockY = ESCAPE_BLOCK.y - (blockH - ESCAPE_BLOCK.h) / 2;
+
       ctx.fillStyle   = hiding ? '#3344cc' : '#2a2aaa';
-      ctx.fillRect(ESCAPE_BLOCK.x, ESCAPE_BLOCK.y, ESCAPE_BLOCK.w, ESCAPE_BLOCK.h);
-      ctx.strokeStyle = hiding ? '#88aaff' : '#4455cc';
-      ctx.lineWidth   = 2;
-      ctx.strokeRect(ESCAPE_BLOCK.x, ESCAPE_BLOCK.y, ESCAPE_BLOCK.w, ESCAPE_BLOCK.h);
+      ctx.fillRect(blockX, blockY, blockW, blockH);
+      ctx.strokeStyle = hiding ? `rgba(136,170,255,${0.8 + Math.sin(escapePulse) * 0.1})` : `rgba(68,85,204,${0.7 + Math.sin(escapePulse) * 0.1})`;
+      ctx.lineWidth   = 3;
+      ctx.strokeRect(blockX, blockY, blockW, blockH);
 
-      // Label inside the escape block
+      ctx.save();
+      ctx.strokeStyle = hiding ? 'rgba(130,190,255,0.4)' : 'rgba(120,140,220,0.2)';
+      ctx.lineWidth = 12;
+      ctx.strokeRect(blockX - 4, blockY - 4, blockW + 8, blockH + 8);
+      ctx.restore();
+
       ctx.fillStyle  = hiding ? '#ccddff' : 'rgba(180,180,255,0.7)';
-      ctx.font       = '13px Arial';
+      ctx.font       = 'bold 14px Arial';
       ctx.textAlign  = 'center';
-      ctx.fillText(
-        hiding ? 'HIDING!' : 'ESCAPE ZONE',
-        ESCAPE_BLOCK.x + ESCAPE_BLOCK.w / 2,
-        ESCAPE_BLOCK.y + ESCAPE_BLOCK.h / 2
-      );
+      ctx.fillText(hiding ? 'HIDING!' : 'ESCAPE ZONE', ESCAPE_BLOCK.x + ESCAPE_BLOCK.w / 2, ESCAPE_BLOCK.y + ESCAPE_BLOCK.h / 2);
 
-      // --- Wall block (black) ---
       ctx.fillStyle = '#111111';
       ctx.fillRect(WALL_BLOCK.x, WALL_BLOCK.y, WALL_BLOCK.w, WALL_BLOCK.h);
 
-      // --- Divider (black) ---
       ctx.fillStyle = '#111111';
       ctx.fillRect(DIVIDER.x, DIVIDER.y, DIVIDER.w, DIVIDER.h);
 
-      // --- Corner squares (black) ---
       ctx.fillStyle = '#111111';
-      for (const corner of CORNERS) {
-        ctx.fillRect(corner.x, corner.y, corner.w, corner.h);
+      for (const corner of CORNERS) ctx.fillRect(corner.x, corner.y, corner.w, corner.h);
+
+      for (const obs of movingObstacles) {
+        ctx.fillStyle = obs.color;
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+        ctx.strokeStyle = '#ffaa00';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
       }
 
-      // --- Coins (gold circles) ---
       for (const coin of coins) {
         if (coin.collected) continue;
-
+        const glow = ctx.createRadialGradient(coin.x, coin.y, coin.r * 0.4, coin.x, coin.y, coin.r * 2.5);
+        glow.addColorStop(0, 'rgba(255, 255, 180, 0.8)');
+        glow.addColorStop(0.6, 'rgba(255, 215, 100, 0.2)');
+        glow.addColorStop(1, 'rgba(255, 215, 100, 0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(coin.x, coin.y, coin.r * 2.5, 0, Math.PI * 2);
+        ctx.fill();
         ctx.beginPath();
         ctx.arc(coin.x, coin.y, coin.r, 0, Math.PI * 2);
         ctx.fillStyle   = '#FFD700';
@@ -708,53 +913,35 @@
         ctx.strokeStyle = '#cc9900';
         ctx.lineWidth   = 1.5;
         ctx.stroke();
-
-        // Dollar sign inside the coin
         ctx.fillStyle  = '#fff8aa';
         ctx.font       = 'bold 10px Arial';
         ctx.textAlign  = 'center';
         ctx.fillText('$', coin.x, coin.y + 4);
       }
 
-      // --- Player (green circle, flashes when invincible) ---
-      // The player flashes when invincible by skipping drawing
-      // every 6th frame
-      const isFlashing = invincibleFrames > 0 && Math.floor(invincibleFrames / 6) % 2 === 0;
+      drawParticles();
 
+      const isFlashing = invincibleFrames > 0 && Math.floor(invincibleFrames / 6) % 2 === 0;
       if (!isFlashing) {
         ctx.beginPath();
-        ctx.arc(
-          player.x + player.w / 2,
-          player.y + player.h / 2,
-          player.w / 2, 0, Math.PI * 2
-        );
+        ctx.arc(player.x + player.w / 2, player.y + player.h / 2, player.w / 2, 0, Math.PI * 2);
         ctx.fillStyle = '#00ff88';
         ctx.fill();
-
-        // "P" label
         ctx.fillStyle  = '#003322';
         ctx.font       = 'bold 13px Arial';
         ctx.textAlign  = 'center';
         ctx.fillText('P', player.x + player.w / 2, player.y + player.h / 2 + 5);
       }
 
-      // --- Enemy (red circle) ---
       ctx.beginPath();
-      ctx.arc(
-        enemy.x + enemy.w / 2,
-        enemy.y + enemy.h / 2,
-        enemy.w / 2, 0, Math.PI * 2
-      );
+      ctx.arc(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, enemy.w / 2, 0, Math.PI * 2);
       ctx.fillStyle = '#ff3333';
       ctx.fill();
-
-      // "E" label
       ctx.fillStyle  = '#330000';
       ctx.font       = 'bold 13px Arial';
       ctx.textAlign  = 'center';
       ctx.fillText('E', enemy.x + enemy.w / 2, enemy.y + enemy.h / 2 + 5);
 
-      // Blue tint overlay when hiding
       if (hiding) {
         ctx.fillStyle = 'rgba(100, 140, 255, 0.15)';
         ctx.fillRect(ESCAPE_BLOCK.x, ESCAPE_BLOCK.y, ESCAPE_BLOCK.w, ESCAPE_BLOCK.h);
@@ -763,65 +950,85 @@
 
 
     // =============================================
-    // STEP 12 — THE GAME LOOP
-    // requestAnimationFrame asks the browser to
-    // call our function right before the next
-    // screen refresh (~60 times per second).
-    //
-    // Every frame we:
-    //   1. Move the player
-    //   2. Move the enemy
-    //   3. Check for collisions
-    //   4. Redraw the screen
-    //   5. Schedule the next frame
+    // GAME LOOP
     // =============================================
-    function gameLoop() {
-      if (!running) return;   // stop if game is not active
+    let lastTime = 0;
 
-      movePlayer();           // 1. move player
-      moveEnemy();            // 2. move enemy
-      checkCollisions();      // 3. check collisions
-      draw();                 // 4. draw frame
-
-      requestAnimationFrame(gameLoop);  // 5. repeat next frame
+    function gameLoop(currentTime) {
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+      if (!running) return;
+      if (!paused) {
+        movePlayer(deltaTime);
+        moveEnemy(deltaTime);
+        checkCollisions();
+        updateReward(deltaTime);
+        updateBackground(deltaTime);
+        updateParticles(deltaTime);
+        draw();
+      }
+      requestAnimationFrame(gameLoop);
     }
 
 
     // =============================================
-    // STEP 13 — GAME START AND END FUNCTIONS
+    // START / END
     // =============================================
-
     function showMessage(text) {
       document.getElementById('message').textContent = text;
     }
 
     function endGame() {
       running = false;
+      stopBackgroundMusic();
+      playGameOverSound();
       showMessage('Game Over!  Final Score: ' + score);
       const btn = document.getElementById('startBtn');
       btn.textContent  = 'Play Again';
       btn.style.display = 'block';
+      document.getElementById('pauseBtn').style.display = 'none';
     }
 
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      paused = !paused;
+      document.getElementById('pauseBtn').textContent = paused ? 'Resume' : 'Pause';
+      showMessage(paused ? '⏸ Paused' : '');
+    });
+
     function startGame() {
-      // Reset all state
+      // Resize canvas fresh before starting
+      resizeCanvas();
+      W = canvas.width;
+      H = canvas.height;
+
       score  = 0;
       lives  = 3;
       level  = 1;
       running = true;
+      paused = false;
+      endlessMode = false;
+      rewardPoints = 0;
+      rewardActive = false;
+      rewardTimer = 0;
+      movingObstacles = [];
+      endlessCoinsSpawnTime = 0;
+      coinParticles = [];
+      bgStars = [];
+      document.getElementById('rewardDisplay').textContent = '0%';
 
+      document.getElementById('pauseBtn').style.display = 'inline-block';
       document.getElementById('scoreDisplay').textContent = '0';
       document.getElementById('livesDisplay').textContent = '3';
       document.getElementById('levelDisplay').textContent = '1';
-
       document.getElementById('startBtn').style.display = 'none';
-      showMessage('');
 
-      initLevel();                        // set up level 1
-      requestAnimationFrame(gameLoop);    // kick off the loop
+      showMessage('Reach Level 10 for Endless Mode!');
+      playBackgroundMusic();
+      initLevel();
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
     }
 
-    // Wire the button to the startGame function
     document.getElementById('startBtn').addEventListener('click', startGame);
 
   </script>
