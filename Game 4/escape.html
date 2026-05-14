@@ -76,7 +76,6 @@
       background-color: #b30909;
       border-radius: 6px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      /* sizing handled by JS */
     }
 
     #bottomBar {
@@ -125,7 +124,7 @@
 
     /* ── Touch D-Pad ── */
     #dpad {
-      display: none; /* shown on touch devices */
+      display: none;
       position: relative;
       width: min(140px, 30vw);
       height: min(140px, 30vw);
@@ -169,7 +168,6 @@
       cursor: default;
     }
 
-    /* Lives flash */
     @keyframes livesFlash {
       0%   { color: #fffb94; transform: scale(1); }
       50%  { color: #ffd700; transform: scale(1.3); text-shadow: 0 0 10px gold; }
@@ -226,13 +224,16 @@ function sizeCanvas() {
   const botH    = document.getElementById('bottomBar').offsetHeight;
   const vw      = window.innerWidth;
   const vh      = window.innerHeight || document.documentElement.clientHeight;
-  const avail   = vh - topH - botH - 16;       // 16px breathing room
+  const avail   = vh - topH - botH - 16;
   const maxW    = vw - 16;
 
-  // keep 4:3 ratio, fit within available space
   let cw = Math.min(maxW, avail * (4/3));
   let ch = cw * (3/4);
   if (ch > avail) { ch = avail; cw = ch * (4/3); }
+
+  // Enforce minimum playable size
+  cw = Math.max(cw, 200);
+  ch = Math.max(ch, 150);
 
   canvas.width  = Math.floor(cw);
   canvas.height = Math.floor(ch);
@@ -255,7 +256,6 @@ window.addEventListener('resize', () => {
   }
 });
 
-// initial fill
 ctx.fillStyle = '#001122';
 ctx.fillRect(0, 0, W, H);
 
@@ -341,20 +341,40 @@ function stopBGMusic() {
   if (bgOsc1) { try{bgOsc1.stop();}catch(e){} try{bgOsc2.stop();}catch(e){} bgOsc1=bgOsc2=null; }
 }
 
-// ── Shapes (getters so they update with canvas size) ──
-const DIVIDER = {
-  get x(){ return canvas.width/2+15 },
-  get y(){ return canvas.height/2-120 },
-  w:10, h:240
-};
-let ESCAPE_BLOCK, WALL_BLOCK;
-const CORNERS = [
-  { get x(){return 0},                   get y(){return 0},                    w:40, h:40 },
-  { get x(){return canvas.width-40},     get y(){return 0},                    w:40, h:40 },
-  { get x(){return 0},                   get y(){return canvas.height-40},     w:40, h:40 },
-  { get x(){return canvas.width-40},     get y(){return canvas.height-40},     w:40, h:40 },
-];
-function allObs() { return [...CORNERS, WALL_BLOCK, DIVIDER]; }
+// ── Shapes ────────────────────────────────────────
+// FIX: Use plain objects updated in initLevel instead of getters
+// so they're never undefined when allObs() is called
+let DIVIDER   = { x:0, y:0, w:0, h:0 };
+let ESCAPE_BLOCK = { x:0, y:0, w:80, h:80 };
+let WALL_BLOCK   = { x:0, y:0, w:80, h:80 };
+let CORNERS = [];
+
+function buildStaticShapes() {
+  const cw = canvas.width, ch = canvas.height;
+
+  // Scale divider to canvas size
+  DIVIDER.x = cw/2 + Math.floor(cw*0.04);
+  DIVIDER.y = ch/2  - Math.floor(ch*0.35);
+  DIVIDER.w = Math.max(6, Math.floor(cw*0.015));
+  DIVIDER.h = Math.floor(ch*0.7);
+
+  // Scale corners (min 20px, max 40px)
+  const cs = Math.min(40, Math.max(20, Math.floor(Math.min(cw,ch)*0.07)));
+  CORNERS = [
+    { x:0,      y:0,      w:cs, h:cs },
+    { x:cw-cs,  y:0,      w:cs, h:cs },
+    { x:0,      y:ch-cs,  w:cs, h:cs },
+    { x:cw-cs,  y:ch-cs,  w:cs, h:cs },
+  ];
+}
+
+// FIX: allObs() guards against undefined blocks
+function allObs() {
+  const obs = [...CORNERS, DIVIDER];
+  if (WALL_BLOCK)   obs.push(WALL_BLOCK);
+  if (ESCAPE_BLOCK) obs.push(ESCAPE_BLOCK);
+  return obs;
+}
 
 // ── Game state ────────────────────────────────────
 let score=0, lives=3, level=1, running=false, paused=false;
@@ -375,11 +395,16 @@ function updateSpeedDisplay() {
 
 // ── Helpers ───────────────────────────────────────
 function overlaps(ax,ay,aw,ah,rects) {
-  for (const r of rects)
+  for (const r of rects) {
+    // FIX: skip any rect that is undefined or missing x
+    if (!r || r.x === undefined) continue;
     if (ax<r.x+r.w && ax+aw>r.x && ay<r.y+r.h && ay+ah>r.y) return true;
+  }
   return false;
 }
+
 function playerHiding() {
+  if (!ESCAPE_BLOCK) return false;
   return player.x>ESCAPE_BLOCK.x && player.x+player.w<ESCAPE_BLOCK.x+ESCAPE_BLOCK.w
       && player.y>ESCAPE_BLOCK.y && player.y+player.h<ESCAPE_BLOCK.y+ESCAPE_BLOCK.h;
 }
@@ -387,18 +412,23 @@ function playerHiding() {
 // ── Coins ─────────────────────────────────────────
 function spawnCoins(n) {
   const res=[]; let att=0;
-  while (res.length<n && att<1000) {
+  const margin = Math.floor(Math.min(canvas.width, canvas.height) * 0.12);
+  while (res.length<n && att<2000) {
     att++;
-    const cx=100+Math.random()*(canvas.width-200);
-    const cy=100+Math.random()*(canvas.height-200);
-    const r=9;
-    if (overlaps(cx-r,cy-r,r*2,r*2,[...allObs(),ESCAPE_BLOCK])) continue;
+    const cx = margin + Math.random()*(canvas.width - margin*2);
+    const cy = margin + Math.random()*(canvas.height - margin*2);
+    const r=Math.max(5, Math.floor(Math.min(canvas.width,canvas.height)*0.018));
+    const safeObs = [...CORNERS, DIVIDER];
+    if (WALL_BLOCK)   safeObs.push(WALL_BLOCK);
+    if (ESCAPE_BLOCK) safeObs.push(ESCAPE_BLOCK);
+    if (overlaps(cx-r, cy-r, r*2, r*2, safeObs)) continue;
     const pdx=cx-canvas.width/2, pdy=cy-canvas.height/2;
-    if (Math.sqrt(pdx*pdx+pdy*pdy)<100) continue;
-    res.push({x:cx,y:cy,r,collected:false});
+    if (Math.sqrt(pdx*pdx+pdy*pdy)<60) continue;
+    res.push({x:cx, y:cy, r, collected:false});
   }
   return res;
 }
+
 function spawnParticles(coin) {
   for (let i=0;i<14;i++) {
     const a=Math.random()*Math.PI*2, sp=40+Math.random()*120;
@@ -437,11 +467,12 @@ function updateReward(dt) {
 // ── Moving obstacles ──────────────────────────────
 function spawnMovingObs(n) {
   movingObstacles=[];
+  const obsSize = Math.max(20, Math.floor(Math.min(canvas.width,canvas.height)*0.07));
   for (let i=0;i<n;i++) {
     movingObstacles.push({
-      x:150+Math.random()*(canvas.width-300),
-      y:150+Math.random()*(canvas.height-300),
-      w:40,h:40,
+      x: obsSize*2 + Math.random()*(canvas.width  - obsSize*4),
+      y: obsSize*2 + Math.random()*(canvas.height - obsSize*4),
+      w: obsSize, h: obsSize,
       vx:(Math.random()>0.5?1:-1)*(40+Math.random()*50),
       vy:(Math.random()>0.5?1:-1)*(25+Math.random()*35),
       color:'#ff8c00'
@@ -489,29 +520,66 @@ function drawBG() {
 
 // ── Init level ────────────────────────────────────
 function initLevel() {
-  W=canvas.width; H=canvas.height;
+  W = canvas.width;
+  H = canvas.height;
+
+  buildStaticShapes(); // FIX: always rebuild shapes for current canvas size
+
   const colors=['#008080','#800080','#808000','#008000','#800000','#000080'];
   bgColor=colors[(level-1)%colors.length];
   if (level>=10&&!endlessMode) { endlessMode=true; showMsg('ENDLESS MODE!'); setTimeout(()=>{if(running)showMsg('');},1500); }
 
-  player={x:W/2-10,y:H/2-10,w:20,h:20,speed:200};
+  player={x:W/2-10, y:H/2-10, w:20, h:20, speed:200};
 
+  // FIX: Scale block sizes to canvas; use generous fallback positions
+  const blkW = Math.min(160, Math.floor(W * 0.28));
+  const blkH = Math.min(160, Math.floor(H * 0.28));
+  const wallW = Math.min(140, Math.floor(W * 0.25));
+  const wallH = Math.min(130, Math.floor(H * 0.25));
+
+  // Try to place ESCAPE_BLOCK; fallback to top-left quadrant
   let placed=false, att=0;
-  while (!placed&&att<100) {
-    att++; const ex=100+Math.random()*(W-260), ey=100+Math.random()*(H-260);
-    const t={x:ex,y:ey,w:160,h:160}, ca={x:W/2-50,y:H/2-50,w:100,h:100};
-    if (!overlaps(t.x,t.y,t.w,t.h,[DIVIDER,...CORNERS,ca])) { ESCAPE_BLOCK=t; placed=true; }
+  while (!placed && att<200) {
+    att++;
+    const ex = blkW/2 + Math.random()*(W - blkW*1.5);
+    const ey = blkH/2 + Math.random()*(H - blkH*1.5);
+    const t = {x:ex, y:ey, w:blkW, h:blkH};
+    const centerAvoid = {x:W/2-50, y:H/2-50, w:100, h:100};
+    if (!overlaps(t.x, t.y, t.w, t.h, [DIVIDER, ...CORNERS, centerAvoid])) {
+      ESCAPE_BLOCK = t; placed=true;
+    }
   }
-  placed=false; att=0;
-  while (!placed&&att<100) {
-    att++; const wx=100+Math.random()*(W-240), wy=100+Math.random()*(H-230);
-    const t={x:wx,y:wy,w:140,h:130}, ca={x:W/2-50,y:H/2-50,w:100,h:100};
-    if (!overlaps(t.x,t.y,t.w,t.h,[DIVIDER,ESCAPE_BLOCK,...CORNERS,ca])) { WALL_BLOCK=t; placed=true; }
+  if (!placed) {
+    // Guaranteed fallback — top-left area
+    ESCAPE_BLOCK = { x: Math.floor(W*0.05), y: Math.floor(H*0.05), w: blkW, h: blkH };
   }
 
-  const edges=[{x:100,y:100},{x:W-100,y:100},{x:100,y:H-100},{x:W-100,y:H-100}];
+  // Try to place WALL_BLOCK; fallback to bottom-right quadrant
+  placed=false; att=0;
+  while (!placed && att<200) {
+    att++;
+    const wx = wallW/2 + Math.random()*(W - wallW*1.5);
+    const wy = wallH/2 + Math.random()*(H - wallH*1.5);
+    const t = {x:wx, y:wy, w:wallW, h:wallH};
+    const centerAvoid = {x:W/2-50, y:H/2-50, w:100, h:100};
+    if (!overlaps(t.x, t.y, t.w, t.h, [DIVIDER, ESCAPE_BLOCK, ...CORNERS, centerAvoid])) {
+      WALL_BLOCK = t; placed=true;
+    }
+  }
+  if (!placed) {
+    // Guaranteed fallback — bottom-right area
+    WALL_BLOCK = { x: Math.floor(W*0.6), y: Math.floor(H*0.6), w: wallW, h: wallH };
+  }
+
+  const cs = CORNERS[0] ? CORNERS[0].w : 20;
+  const edges=[
+    {x:cs+10, y:cs+10},
+    {x:W-cs-30, y:cs+10},
+    {x:cs+10, y:H-cs-30},
+    {x:W-cs-30, y:H-cs-30}
+  ];
   const sp=Math.floor(Math.random()*4);
-  enemy={x:edges[sp].x,y:edges[sp].y,w:20,h:20,speed:enemySpeed()};
+  enemy={x:edges[sp].x, y:edges[sp].y, w:20, h:20, speed:enemySpeed()};
   updateSpeedDisplay();
 
   if (!bgStars.length) createStars(120);
@@ -540,7 +608,6 @@ document.addEventListener('keydown', e=>{
 document.addEventListener('keyup', e=>{ keys[e.key]=false; });
 
 // ── Touch D-Pad ───────────────────────────────────
-// Map dpad buttons to keys
 const dpadMap = {
   dUp:    'ArrowUp',
   dDown:  'ArrowDown',
@@ -552,18 +619,8 @@ function attachDpadButton(id) {
   const el = document.getElementById(id);
   if (!el) return;
   const key = dpadMap[id];
-
-  const press = (e) => {
-    e.preventDefault();
-    keys[key] = true;
-    el.classList.add('pressed');
-  };
-  const release = (e) => {
-    e.preventDefault();
-    keys[key] = false;
-    el.classList.remove('pressed');
-  };
-
+  const press   = (e) => { e.preventDefault(); keys[key]=true;  el.classList.add('pressed'); };
+  const release = (e) => { e.preventDefault(); keys[key]=false; el.classList.remove('pressed'); };
   el.addEventListener('touchstart',  press,   { passive: false });
   el.addEventListener('touchend',    release, { passive: false });
   el.addEventListener('touchcancel', release, { passive: false });
@@ -571,11 +628,9 @@ function attachDpadButton(id) {
   el.addEventListener('mouseup',     release);
   el.addEventListener('mouseleave',  release);
 }
-
 ['dUp','dDown','dLeft','dRight'].forEach(attachDpadButton);
 
-// ── Joystick / swipe on canvas ────────────────────
-// Allow swiping the canvas itself as directional input too
+// ── Swipe on canvas ───────────────────────────────
 let touchStartX=0, touchStartY=0;
 canvas.addEventListener('touchstart', e=>{
   e.preventDefault();
@@ -587,7 +642,6 @@ canvas.addEventListener('touchmove', e=>{
   const t=e.touches[0];
   const dx=t.clientX-touchStartX, dy=t.clientY-touchStartY;
   const DEAD=12;
-  // reset
   keys['ArrowUp']=keys['ArrowDown']=keys['ArrowLeft']=keys['ArrowRight']=false;
   if (Math.abs(dx)>Math.abs(dy)) {
     if (dx>DEAD)  keys['ArrowRight']=true;
@@ -610,7 +664,7 @@ function movePlayer(dt) {
   if (keys['ArrowRight']||keys['d']) dx+=sp;
   if (keys['ArrowUp']   ||keys['w']) dy-=sp;
   if (keys['ArrowDown'] ||keys['s']) dy+=sp;
-  const obs=allObs();
+  const obs=[...CORNERS, DIVIDER, WALL_BLOCK].filter(Boolean);
   const nx=player.x+dx;
   if (nx>=0&&nx+player.w<=canvas.width&&!overlaps(nx,player.y,player.w,player.h,obs)) player.x=nx;
   const ny=player.y+dy;
@@ -625,7 +679,7 @@ function moveEnemy(dt) {
   const dx=player.x-enemy.x, dy=player.y-enemy.y;
   const dist=Math.sqrt(dx*dx+dy*dy)||1;
   const sx=(dx/dist)*sp*(dt/1000), sy=(dy/dist)*sp*(dt/1000);
-  const exc=[...allObs(),ESCAPE_BLOCK];
+  const exc=[...CORNERS, DIVIDER, ESCAPE_BLOCK, WALL_BLOCK].filter(Boolean);
   const nex=enemy.x+sx;
   if (nex>=0&&nex+enemy.w<=canvas.width&&!overlaps(nex,enemy.y,enemy.w,enemy.h,exc)) enemy.x=nex;
   const ney=enemy.y+sy;
@@ -653,7 +707,8 @@ function checkCollisions() {
 
   for (const o of movingObstacles) {
     if (player.x<o.x+o.w&&player.x+player.w>o.x&&player.y<o.y+o.h&&player.y+player.h>o.y) {
-      if (invincibleFrames<=0) { lives--; streak=0; document.getElementById('livesDisplay').textContent=lives;
+      if (invincibleFrames<=0) {
+        lives--; streak=0; document.getElementById('livesDisplay').textContent=lives;
         invincibleFrames=100; playCaughtSound();
         if (lives<=0){endGame();return;}
         player.x=canvas.width/2-10; player.y=canvas.height/2-10;
@@ -703,6 +758,8 @@ function drawParticles() {
 
 function draw() {
   drawBG();
+  if (!ESCAPE_BLOCK || !WALL_BLOCK) return; // safety guard
+
   const hiding=playerHiding();
   const pulse=1+Math.sin(escapePulse)*0.08;
   const bw=ESCAPE_BLOCK.w*pulse, bh=ESCAPE_BLOCK.h*pulse;
@@ -715,8 +772,8 @@ function draw() {
   ctx.lineWidth=12; ctx.strokeRect(bx-4,by-4,bw+8,bh+8); ctx.restore();
 
   ctx.fillStyle=hiding?'#ccddff':'rgba(180,180,255,0.7)';
-  ctx.font=`bold ${Math.max(9,Math.floor(canvas.width/80))}px Arial`; ctx.textAlign='center';
-  ctx.fillText(hiding?'HIDING!':'ESCAPE ZONE', ESCAPE_BLOCK.x+ESCAPE_BLOCK.w/2, ESCAPE_BLOCK.y+ESCAPE_BLOCK.h/2);
+  ctx.font=`bold ${Math.max(8, Math.floor(canvas.width/80))}px Arial`; ctx.textAlign='center';
+  ctx.fillText(hiding?'HIDING!':'ESCAPE', ESCAPE_BLOCK.x+ESCAPE_BLOCK.w/2, ESCAPE_BLOCK.y+ESCAPE_BLOCK.h/2);
 
   ctx.fillStyle='#111111';
   ctx.fillRect(WALL_BLOCK.x,WALL_BLOCK.y,WALL_BLOCK.w,WALL_BLOCK.h);
@@ -735,7 +792,7 @@ function draw() {
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(c.x,c.y,c.r*2.5,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2);
     ctx.fillStyle='#FFD700'; ctx.fill(); ctx.strokeStyle='#cc9900'; ctx.lineWidth=1.5; ctx.stroke();
-    ctx.fillStyle='#fff8aa'; ctx.font=`bold ${Math.max(8,Math.floor(canvas.width/100))}px Arial`; ctx.textAlign='center';
+    ctx.fillStyle='#fff8aa'; ctx.font=`bold ${Math.max(7, Math.floor(canvas.width/100))}px Arial`; ctx.textAlign='center';
     ctx.fillText('$',c.x,c.y+4);
   }
 
@@ -763,7 +820,8 @@ function draw() {
 // ── Game loop ─────────────────────────────────────
 let lastTime=0;
 function gameLoop(ts) {
-  const dt=ts-lastTime; lastTime=ts;
+  const dt=Math.min(ts-lastTime, 100); // FIX: cap dt to avoid huge jumps on tab switch
+  lastTime=ts;
   if (!running) return;
   if (!paused) {
     movePlayer(dt); moveEnemy(dt); checkCollisions();
@@ -791,11 +849,12 @@ document.getElementById('pauseBtn').addEventListener('click', ()=>{
 });
 
 function startGame() {
-  // Resume AudioContext on first gesture (required by browsers)
   if (!audioCtx) { audioCtx = new AudioCtx(); }
   if (audioCtx.state === 'suspended') audioCtx.resume();
 
   sizeCanvas(); W=canvas.width; H=canvas.height;
+  buildStaticShapes(); // FIX: build shapes before initLevel
+
   score=0; lives=3; level=1; running=true; paused=false; endlessMode=false;
   rewardPoints=0; rewardActive=false; rewardTimer=0; rewardPower=1; streak=0;
   movingObstacles=[]; endlessCoinsTime=0; coinParticles=[]; bgStars=[];
@@ -815,7 +874,6 @@ function startGame() {
 
 document.getElementById('startBtn').addEventListener('click', startGame);
 
-// Prevent scroll on touch
 document.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
 </script>
 </body>
